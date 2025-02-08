@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI("AIzaSyBtmSIBlmyda6H24ysh4UwS0y3lWjeJojo");
+const genAI = new GoogleGenerativeAI("YOUR_API_KEY");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const prompt = "i have to go from bangalore to udupi write an sql queury for that we have the routes busses, retrieve the route id , bus id, distance , do not hallucinate and give extra bullshit , just give the sql queury";
