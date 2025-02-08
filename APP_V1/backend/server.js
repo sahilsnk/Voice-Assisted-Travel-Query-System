@@ -6,14 +6,14 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const app = express();
 const port = 3000;
-const uri = "mongodb+srv://samarthdgothe:dbmsel@el.tugo2.mongodb.net/?retryWrites=true&w=majority&appName=EL";
+const uri = "mongodb+srv://samarthdgothe:password@el.tugo2.mongodb.net/?retryWrites=true&w=majority&appName=EL";
 
 // MySQL Database Configuration
 const dbConfig = {
-  host: '192.168.56.1',
-  user: 'sahil',
-  password: 'sahil123',
-  database: 'transport_system',
+  host: '',
+  user: '',
+  password: '',
+  database: '',
 };
 const client = new MongoClient(uri, {
   serverApi: {
