@@ -138,7 +138,8 @@ app.post('/save-transcription', async (req, res) => {
       JOIN Route ON bus.Route_Id = Route.Route_Id
       LEFT JOIN feedback ON bus.Bus_Id = feedback.Bus_Id
       WHERE LOWER(Route.Start_Location) = ? AND LOWER(Route.End_Location) = ?
-      GROUP BY bus.Bus_Id`,
+      GROUP BY bus.Bus_Id
+      ORDER BY average_rating DESC;`,
       [source.toLowerCase(), destination.toLowerCase()]
     );
 
