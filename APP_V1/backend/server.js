@@ -6,14 +6,14 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const app = express();
 const port = 3000;
-const uri = "mongodb+srv://samarthdgothe:password@el.tugo2.mongodb.net/?retryWrites=true&w=majority&appName=EL";
+const uri = "MONGO_DB_CONNECTION_STRING"; 
 
 // MySQL Database Configuration
 const dbConfig = {
-  host: '',
-  user: '',
-  password: '',
-  database: '',
+  host: 'HOSTNAME',
+  user: 'USERNAME',
+  password: 'PASSWORD',
+  database: 'DATABASE_NAME',
 };
 const client = new MongoClient(uri, {
   serverApi: {
@@ -129,12 +129,16 @@ app.post('/save-transcription', async (req, res) => {
     console.log('✅ Transcription saved to MongoDB:', mongoResult.insertedId);
 
     // 🔍 **Find matching buses from MySQL**
+    // In your /save-transcription route
     const [busResults] = await mysqlDb.execute(
       `SELECT bus.Bus_Id, bus.Bus_Number, bus.Bus_Type, bus.Capacity, bus.Timing, 
-              route.Start_Location, route.End_Location
-       FROM Bus 
-       JOIN Route ON bus.Route_Id = Route.Route_Id
-       WHERE LOWER(Route.Start_Location) = ? AND LOWER(Route.End_Location) = ?`,
+      route.Start_Location, route.End_Location,
+      COALESCE(AVG(feedback.Rating), 0) AS average_rating
+      FROM Bus 
+      JOIN Route ON bus.Route_Id = Route.Route_Id
+      LEFT JOIN feedback ON bus.Bus_Id = feedback.Bus_Id
+      WHERE LOWER(Route.Start_Location) = ? AND LOWER(Route.End_Location) = ?
+      GROUP BY bus.Bus_Id`,
       [source.toLowerCase(), destination.toLowerCase()]
     );
 
@@ -157,22 +161,41 @@ app.post('/submit-feedback', async (req, res) => {
   console.log('📌 POST /submit-feedback called');
 
   try {
-    const { user_id, rating, cleanliness, punctuality, comment } = req.body;
+    const { user_id, bus_id, rating, cleanliness, punctuality, comment } = req.body;
     
-    // Calculate average rating from the three ratings
+    // Calculate average rating
     const averageRating = (parseFloat(rating) + parseFloat(cleanliness) + parseFloat(punctuality)) / 3;
 
-    // Insert into feedback table
+    // Insert into MySQL feedback table
     const [result] = await mysqlDb.execute(
-      `INSERT INTO feedback (User_Id, Rating, Feedback_Text) 
-       VALUES (?, ?, ?)`,
-      [user_id, averageRating, comment]
+      `INSERT INTO feedback (User_Id, Bus_Id, Rating, Feedback_Text) 
+       VALUES (?, ?, ?, ?);`,  // Add Bus_Id to SQL query
+      [user_id, bus_id, averageRating, comment]
     );
 
-    console.log('✅ Feedback submitted successfully');
+    console.log('✅ Feedback submitted successfully to MySQL');
+
+    // MongoDB feedback insertion
+    const feedback_collection = mongodbDb.collection("FeedBackData");
+    const feedback_mongoResult = await feedback_collection.insertOne({
+      user_id: user_id || null,  
+      bus_id : bus_id,
+      comment,
+      feedback_id: result.insertId,
+      rating,
+      cleanliness,
+      punctuality,
+      averageRating,
+      timestamp: new Date()
+    });
+
+    console.log('✅ Feedback saved to MongoDB:', feedback_mongoResult.insertedId);
+
+    // Send response after both operations are completed
     res.json({ 
       message: 'Feedback submitted successfully',
-      feedback_id: result.insertId 
+      feedback_id: result.insertId,
+      mongo_id: feedback_mongoResult.insertedId
     });
 
   } catch (error) {
@@ -180,6 +203,7 @@ app.post('/submit-feedback', async (req, res) => {
     res.status(500).json({ error: 'Failed to submit feedback' });
   }
 });
+
 // Start the server after connecting to the databases
 async function startServer() {
   await connectToMongoDB();

@@ -11,10 +11,10 @@ app.use(bodyParser.json());
 
 // Database connection
 const db = mysql.createConnection({
-    host: '192.168.56.1',
-    user: 'sahil',
-    password: 'sahil123',
-    database: 'transport_system',
+    host: 'HOSTNAME',
+    user: 'USERNAME',
+    password: 'PASSWORD',
+    database: 'DATABASE_NAME',
 });
 
 db.connect((err) => {

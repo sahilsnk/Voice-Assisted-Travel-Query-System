@@ -136,7 +136,22 @@ const Home = () => {
     processQueue();
     return () => clearTimeout(timeoutId);
   }, [transcript, listening, isProcessing, processingQueue, resetTranscript, user]);
-
+  const StarRating = ({ rating }) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    return (
+      <div className="star-rating">
+        {[...Array(5)].map((_, index) => (
+          <span key={index} className="star">
+            {index < fullStars ? '★' : 
+             (hasHalfStar && index === fullStars) ? '⯨' : '☆'}
+          </span>
+        ))}
+        <span className="rating-text">({parseFloat(rating).toFixed(1)})</span>
+      </div>
+    );
+  };
   const toggleListening = () => {
     if (listening) {
       SpeechRecognition.stopListening();
@@ -166,6 +181,7 @@ const Home = () => {
     try {
       const response = await axios.post("http://localhost:3000/submit-feedback", {
         user_id: user.id,
+        bus_id: selectedBusForFeedback.Bus_Id,
         ...feedbackData
       });
   
@@ -402,6 +418,11 @@ const Home = () => {
           border-bottom: 1px solid #e5e7eb;
         }
 
+        .rating-cell {
+          font-weight: bold;
+          color: #ff9800;
+        }
+
         .results-table tr:nth-child(even) {
           background: #f9fafb;
         }
@@ -513,6 +534,7 @@ const Home = () => {
                     <th>Capacity</th>
                     <th>Timing</th>
                     <th>Route</th>
+                    <th>Rating</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -528,6 +550,9 @@ const Home = () => {
                         <td>{bus.Capacity}</td>
                         <td>{bus.Timing}</td>
                         <td>{bus.Start_Location} → {bus.End_Location}</td>
+                        <td className="rating-cell">
+                        <StarRating rating={bus.average_rating} />
+                        </td>
                       </tr>
                       {selectedBus === index && (
                         <tr>
